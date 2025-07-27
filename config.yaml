@@ -1,0 +1,21 @@
+# # config.yaml
+
+# # Application metadata
+# app_name: "ExpireDex"
+# environment: "development"  # or "production"
+
+# Aerospike DB configuration
+aerospike:
+  host: "127.0.0.1"
+  port: 3000
+  namespace: "test"
+  set: "otp_data"
+  user: ""      # Optional for enterprise setups
+  password: ""  # Optional for enterprise setups
+
+# Cleanup logic
+cleanup:
+  key_prefix: "delete_on:"
+  date_format: "20060102"  # Go time format
+  run_interval_minutes: 1440  # 24 hours
+  batch_size: 1000            # How many keys to process per scan batch

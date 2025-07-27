@@ -1,127 +1,117 @@
+```markdown
 # 🧹 ExpireDex
 
-**ExpireDex** is a lightweight Go microservice designed to perform scheduled cleanup of expired keys from a high-performance key-value database like **Aerospike**. It targets keys indexed by expiration date and removes them efficiently using a structured, observable cron-based engine.
+> A simple Golang service to scan and delete expired OTP keys in Aerospike using a rule-based key prefix and date format.
 
 ---
 
-## 🚀 Why ExpireDex?
+## 🚀 What is ExpireDex?
 
-In systems that generate short-lived data like OTPs, session tokens, or retry queues, relying solely on native TTLs may lead to leftover data or require periodic garbage collection.
+**ExpireDex** is a cleanup service that:
 
-**ExpireDex solves this by:**
-- Organizing expirable keys under a cleanup index (e.g. `delete_on:{YYYY-MM-DD}`)
-- Performing **daily deletions** of expired entries
-- Logging cleanups with structured Go logs
-- Operating as a plug-and-play background microservice
+- Scans all records in an Aerospike namespace/set
+- Identifies keys with a specific prefix (e.g., `delete_on:YYYYMMDD:keyN`)
+- Parses date from key and deletes expired ones
+- Supports **dry-run** mode for safety
+- Can generate fake keys for local testing
 
 ---
 
-## 🔧 Architecture Overview
+## 📦 Project Structure
 
 ```
-                   +--------------------+
-                   |  Cleanup Scheduler |
-                   +---------+----------+
-                             |
-                             v
-      +-----------------------------+       +-------------------+
-      |   delete_on:{2025-07-22}    |<----->|   Aerospike DB    |
-      | [key1, key2, key3, ...]     |       +-------------------+
-      +-----------------------------+
-                             |
-                             v
-                +-------------------------+
-                |  Structured Logger      |
-                +-------------------------+
-```
+
+![alt text](image.png)
+````
 
 ---
 
-## 🛠️ Tech Stack
+## ⚙️ Configuration (`config.yaml`)
 
-- **Language**: Go 1.22+
-- **Database**: Aerospike (via official Go client)
-- **Scheduler**: Custom cron-like runner
-- **Logging**: JSON-structured logs via custom logger
-- **Structure**: Modular with `cmd/`, `internal/`, `config/`
+```yaml
+aerospike:
+  host: "127.0.0.1"
+  port: 3000
+  namespace: "test"
+  set: "otp_data"
 
----
-
-## 🗂️ Folder Structure
-
-```
-expiredex/
-├── cmd/expiredex/main.go         # Entry point
-├── config/config.go              # Env/config loader
-├── internal/
-│   ├── cleanup/                  # Cleanup job logic
-│   ├── db/                       # Aerospike wrappers
-│   └── utils/logger.go           # Structured logger
-├── .env                          # Config vars
-├── go.mod
-└── README.md
-```
+cleanup:
+  key_prefix: "delete_on:"
+  date_format: "20060102"
+````
 
 ---
 
-## ⚙️ Setup & Run
+## 🛠️ Setup & Run
 
-### 1. Clone the repo
+### 1. Clone & Install
 
 ```bash
-git clone https://github.com/yourusername/expiredex.git
+git clone https://github.com/your-username/expiredex.git
 cd expiredex
+go mod tidy
 ```
 
-### 2. Create `.env` file
+### 2. Configure `.env`
 
-```env
-AEROSPIKE_HOST=127.0.0.1
-AEROSPIKE_PORT=3000
-AEROSPIKE_NAMESPACE=test
-LOG_LEVEL=INFO
-```
+(Optional) Create `.env` for any secrets or logging config.
 
-### 3. Run the cleanup job manually
+### 3. Run the Service
 
 ```bash
 go run cmd/expiredex/main.go
 ```
 
----
+This will:
 
-## 🧪 Example Use Case: OTP Cleanup
-
-- OTPs are stored with keys like `otp:user1234`
-- Each OTP key is added to a set: `delete_on:2025-07-22`
-- At midnight, ExpireDex reads `delete_on:2025-07-22` and deletes the associated keys
+* Insert 5 fake OTP records (2 expired, 3 future)
+* Run cleanup logic
+* Print deleted keys and their timestamps
 
 ---
 
-## 🧠 Designed For
+## 💡 Features
 
-- Engineers who want **modular, testable cleanup utilities**
-- Teams using **Aerospike/Redis** and need **custom TTL enforcement**
-- Projects requiring **decoupled deletion logic** from main services
+| Feature                  | Status |
+| ------------------------ | ------ |
+| Configurable key prefix  | ✅      |
+| Key date parsing         | ✅      |
+| Dry-run safe mode        | ✅      |
+| Fake data generator      | ✅      |
+| Logs with banner         | ✅      |
+| Modular folder structure | ✅      |
 
 ---
 
-## 📌 Future Enhancements
+## 🧪 Example Output
 
-- Dry-run and metrics mode
-- Webhook or Slack notifications on failures
-- Optional Web API control layer
-- Generic backend interface to support Redis, DynamoDB
+```
+✅ Found key with prefix: delete_on:20250727:key1
+NOW: 20250727 KEY_DATE: 20250727
+⏰ Expired date: 2025-07-27
+🧹 Successfully deleted: delete_on:20250727:key1
+```
+
+---
+
+## ✅ Future Roadmap
+
+* [ ] CLI tool with flags (`--dry-run`, `--range=7d`, etc.)
+* [ ] Scheduled CRON execution
+* [ ] Dashboard/GUI to track expired/deleted keys
+* [ ] Integration with Slack/email alerts
+* [ ] Aerospike TTL support
 
 ---
 
 ## 👨‍💻 Author
 
-**Hari Aneesh Siddhartha**  
-Backend Engineer | Aerospike, Redis, Golang | System Design Enthusiast
+**Hari Aneesh Siddhartha**
+Built with ❤️ in Go to level up backend skills and clean up key clutter!
 
 ---
 
-## 🛡 License
+## 📄 License
 
-MIT License
+MIT — feel free to use and contribute!
+
